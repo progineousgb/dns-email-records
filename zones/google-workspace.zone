@@ -1,0 +1,47 @@
+; Google Workspace
+; Example zone for example.com. Replace example.com, the IPs (RFC 5737
+; documentation ranges) and every value marked REPLACE.
+; Check with: named-checkzone example.com zones/google-workspace.zone
+$ORIGIN example.com.
+$TTL 3600
+@       IN SOA  ns1.example.com. hostmaster.example.com. (
+                2026102101 ; serial
+                3600       ; refresh
+                900        ; retry
+                1209600    ; expire
+                300 )      ; negative cache TTL
+@       IN NS   ns1.example.com.
+@       IN NS   ns2.example.com.
+ns1     IN A    192.0.2.53
+ns2     IN A    198.51.100.53
+@       IN A    192.0.2.10
+www     IN CNAME example.com.
+
+; MX: single record, documented at https://support.google.com/a/answer/174125
+; Domains set up before 2023 may use the older ASPMX.L.GOOGLE.COM set; both work.
+@               IN MX   1 smtp.google.com.
+
+; SPF: https://support.google.com/a/answer/10685031
+@               IN TXT  "v=spf1 include:_spf.google.com ~all"
+
+; DKIM: generate the key in Admin console > Apps > Google Workspace > Gmail >
+; Authenticate email. Default selector is "google". The 2048-bit key is longer
+; than 255 characters, so it is split into several strings in one record.
+google._domainkey IN TXT ( "v=DKIM1; k=rsa; p=REPLACE_WITH_KEY_FROM_ADMIN_CONSOLE_PART1"
+                           "REPLACE_WITH_KEY_FROM_ADMIN_CONSOLE_PART2" )
+
+; DMARC. Start at p=none and read the reports before tightening.
+_dmarc          IN TXT  "v=DMARC1; p=none; rua=mailto:dmarc-reports@example.com"
+
+; TLS reporting (RFC 8460)
+_smtp._tls      IN TXT  "v=TLSRPTv1; rua=mailto:tlsrpt@example.com"
+
+; MTA-STS (RFC 8461). Policy file is served from https://mta-sts.example.com/.well-known/mta-sts.txt
+; Change id every time the policy file changes.
+_mta-sts        IN TXT  "v=STSv1; id=20261021000000"
+mta-sts         IN A    192.0.2.10
+
+; CAA (RFC 8659): only Let's Encrypt may issue certificates for this domain.
+@               IN CAA  0 issue "letsencrypt.org"
+@               IN CAA  0 issuewild ";"
+@               IN CAA  0 iodef "mailto:hostmaster@example.com"

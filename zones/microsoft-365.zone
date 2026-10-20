@@ -1,0 +1,52 @@
+; Microsoft 365 (Exchange Online)
+; Example zone for example.com. Replace example.com, the IPs (RFC 5737
+; documentation ranges) and every value marked REPLACE.
+; Check with: named-checkzone example.com zones/microsoft-365.zone
+$ORIGIN example.com.
+$TTL 3600
+@       IN SOA  ns1.example.com. hostmaster.example.com. (
+                2026102101 ; serial
+                3600       ; refresh
+                900        ; retry
+                1209600    ; expire
+                300 )      ; negative cache TTL
+@       IN NS   ns1.example.com.
+@       IN NS   ns2.example.com.
+ns1     IN A    192.0.2.53
+ns2     IN A    198.51.100.53
+@       IN A    192.0.2.10
+www     IN CNAME example.com.
+
+; MX: copy the exact value from Microsoft 365 admin center > Settings > Domains.
+; It has the form <domain-with-dashes>.mail.protection.outlook.com.
+; https://learn.microsoft.com/en-us/microsoft-365/admin/get-help-with-domains/create-dns-records-at-any-dns-hosting-provider
+@               IN MX   0 example-com.mail.protection.outlook.com.
+
+; Autodiscover for Outlook clients (value shown in the admin center).
+autodiscover    IN CNAME autodiscover.outlook.com.
+
+; SPF: https://learn.microsoft.com/en-us/defender-office-365/email-authentication-spf-configure
+@               IN TXT  "v=spf1 include:spf.protection.outlook.com -all"
+
+; DKIM: two CNAMEs. Copy the targets from the Defender portal
+; (Email authentication settings > DKIM). The target format is
+; selector1-<domain-with-dashes>._domainkey.<initial-domain-prefix>.<partition>-v1.dkim.mail.microsoft
+; https://learn.microsoft.com/en-us/defender-office-365/email-authentication-dkim-configure
+selector1._domainkey IN CNAME selector1-example-com._domainkey.REPLACE.REPLACE-v1.dkim.mail.microsoft.
+selector2._domainkey IN CNAME selector2-example-com._domainkey.REPLACE.REPLACE-v1.dkim.mail.microsoft.
+
+; DMARC. Start at p=none and read the reports before tightening.
+_dmarc          IN TXT  "v=DMARC1; p=none; rua=mailto:dmarc-reports@example.com"
+
+; TLS reporting (RFC 8460)
+_smtp._tls      IN TXT  "v=TLSRPTv1; rua=mailto:tlsrpt@example.com"
+
+; MTA-STS (RFC 8461). Policy file is served from https://mta-sts.example.com/.well-known/mta-sts.txt
+; Change id every time the policy file changes.
+_mta-sts        IN TXT  "v=STSv1; id=20261021000000"
+mta-sts         IN A    192.0.2.10
+
+; CAA (RFC 8659): only Let's Encrypt may issue certificates for this domain.
+@               IN CAA  0 issue "letsencrypt.org"
+@               IN CAA  0 issuewild ";"
+@               IN CAA  0 iodef "mailto:hostmaster@example.com"
