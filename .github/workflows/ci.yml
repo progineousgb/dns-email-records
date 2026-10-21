@@ -1,0 +1,13 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  zones:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y bind9-utils
+      - name: named-checkzone
+        run: for f in zones/*.zone; do named-checkzone example.com "$f"; done
